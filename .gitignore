@@ -1,3 +1,4 @@
+*.sh
 */__pycache__/
 */*/__pycache__/
 *.pyc
@@ -6,12 +7,11 @@
 *.cluster.local
 *tfevent*
 *.png
+*.jpg
 *.pkl
 */tmp/
 process_data/data/
 !asset/*.png
-#!asset/*/*.png
-#!asset/*/*/*.png
 *.nfs*
 */model/*
 *.tsv

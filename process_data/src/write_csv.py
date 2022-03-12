@@ -91,12 +91,37 @@ def main_Kinetics400(mode, k400_path, f_root, csv_root='../data/kinetics400'):
     else:
         raise IOError('wrong mode')
 
+
+### For Toyota Smarthome Untrimmed ###
+def get_split(root_path, split_path):
+    split = []
+    with open(split_path, 'r') as f:
+        for line in f:
+            # path/class/video_name(no extension)/
+            vpath = os.path.join(root_path, line.split('_')[0], line[0:-5]) + '/'
+            split.append([vpath, len(glob.glob(os.path.join(vpath, '*.jpg')))])
+    return split
+
+def main_toyota(splits_root, f_root, csv_root='../data/toyota_smarthome'):
+    if not os.path.exists(csv_root): os.makedirs(csv_root)
+
+    train_split_file = os.path.join(splits_root, 'train.txt')
+    test_split_file = os.path.join(splits_root, 'test.txt')
+    train_set = get_split(f_root, train_split_file)
+    test_set = get_split(f_root, test_split_file)
+    
+    write_list(train_set, os.path.join(csv_root, 'train.csv'))
+    write_list(test_set, os.path.join(csv_root, 'test.csv'))
+
 if __name__ == '__main__':
     # f_root is the frame path
     # edit 'your_path' here: 
 
-    main_UCF101(f_root='your_path/UCF101/frame', 
-                splits_root='your_path/UCF101/splits_classification')
+    main_toyota(f_root='/workspace/toyota_smarthome/rgb_frames',
+                splits_root='/workspace/toyota_smarthome/splits')
+
+    # main_UCF101(f_root='your_path/UCF101/frame', 
+    #             splits_root='your_path/UCF101/splits_classification')
 
     # main_HMDB51(f_root='your_path/HMDB51/frame',
     #             splits_root='your_path/HMDB51/split/testTrainMulti_7030_splits')

@@ -7,12 +7,20 @@ import cv2
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
-def extract_video_opencv(v_path, f_root, dim=240):
+def extract_video_opencv(v_path, f_root, dim=240, in_folder=True):
     '''v_path: single video path;
-       f_root: root to store frames'''
-    v_class = v_path.split('/')[-2]
+       f_root: root to store frames
+       in_folder: (default: True) if dataset videos a grouped in folders by class
+                    if class is contained on the name and all videos on the same folder 
+                    use False'''
+    
     v_name = os.path.basename(v_path)[0:-4]
+    if in_folder:
+        v_class = v_path.split('/')[0]
+    else:
+        v_class = v_name.split('_')[0] # Files as Class_name.*
     out_dir = os.path.join(f_root, v_class, v_name)
+   
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -55,6 +63,15 @@ def main_UCF101(v_root, f_root):
         v_paths = sorted(v_paths)
         Parallel(n_jobs=32)(delayed(extract_video_opencv)(p, f_root) for p in tqdm(v_paths, total=len(v_paths)))
 
+def main_toyota(v_root, f_root):
+    print('extracting toyota_smarthome ... ')
+    print('extracting videos from %s' % v_root)
+    print('frame save to %s' % f_root)
+    
+    if not os.path.exists(f_root): os.makedirs(f_root)
+    v_act_root = glob.glob(os.path.join(v_root, '*.mp4'))
+    Parallel(n_jobs=32)(delayed(extract_video_opencv)(p, f_root, in_folder=False) for p in tqdm(v_act_root, total=len(v_act_root)))
+
 def main_HMDB51(v_root, f_root):
     print('extracting HMDB51 ... ')
     print('extracting videos from %s' % v_root)
@@ -96,8 +113,11 @@ if __name__ == '__main__':
     # v_root is the video source path, f_root is where to store frames
     # edit 'your_path' here: 
     
-    main_UCF101(v_root='your_path/UCF101/videos',
-                f_root='your_path/UCF101/frame')
+    main_toyota(v_root='/datasets/toyota_smarthome/rgb/mp4/',
+                f_root='/workspace/toyota_smarthome/rgb_frames/')
+
+    # main_UCF101(v_root='/datasets/UCF-101/videos',
+    #             f_root='/workspace/toyota_smarthome/rgb_frames/')
 
     # main_HMDB51(v_root='your_path/HMDB51/videos',
     #             f_root='your_path/HMDB51/frame')
