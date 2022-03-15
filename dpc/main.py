@@ -27,7 +27,7 @@ torch.backends.cudnn.benchmark = True
 parser = argparse.ArgumentParser()
 parser.add_argument('--net', default='resnet18', type=str)
 parser.add_argument('--model', default='dpc-rnn', type=str)
-parser.add_argument('--dataset', default='ucf101', type=str)
+parser.add_argument('--dataset', default='ucf101', type=str, help='ucf101(default), toyota, k400')
 parser.add_argument('--seq_len', default=5, type=int, help='number of frames in each video block')
 parser.add_argument('--num_seq', default=8, type=int, help='number of video blocks')
 parser.add_argument('--pred_step', default=3, type=int)
@@ -126,6 +126,16 @@ def main():
         transform = transforms.Compose([
             RandomSizedCrop(size=args.img_dim, consistent=True, p=1.0),
             RandomHorizontalFlip(consistent=True),
+            RandomGray(consistent=False, p=0.5),
+            ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25, p=1.0),
+            ToTensor(),
+            Normalize()
+        ])
+    elif args.dataset == 'toyota':
+        transform = transforms.Compose([
+            RandomHorizontalFlip(consistent=True),
+            RandomCrop(size=224, consistent=True),
+            Scale(size=(args.img_dim,args.img_dim)),
             RandomGray(consistent=False, p=0.5),
             ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25, p=1.0),
             ToTensor(),
@@ -298,6 +308,12 @@ def get_data(transform, mode='train'):
                          seq_len=args.seq_len,
                          num_seq=args.num_seq,
                          downsample=args.ds)
+    elif args.dataset == 'toyota':
+        dataset = TOYOTASH_3d(mode=mode,
+                        transform = transform,
+                        seq_len = args.seq_len,
+                        num_seq=args.num_seq,
+                        downsample=args.ds)
     else:
         raise ValueError('dataset not supported')
 

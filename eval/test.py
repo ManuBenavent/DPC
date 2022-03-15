@@ -9,7 +9,7 @@ from tensorboardX import SummaryWriter
 
 sys.path.append('../utils')
 sys.path.append('../backbone')
-from dataset_3d_lc import UCF101_3d, HMDB51_3d
+from dataset_3d_lc import UCF101_3d, HMDB51_3d, TOYOTASH_3d
 from model_3d_lc import *
 from resnet_2d3d import neq_load_customized
 from augmentation import *
@@ -25,7 +25,7 @@ import torchvision.utils as vutils
 parser = argparse.ArgumentParser()
 parser.add_argument('--net', default='resnet18', type=str)
 parser.add_argument('--model', default='lc', type=str)
-parser.add_argument('--dataset', default='ucf101', type=str)
+parser.add_argument('--dataset', default='ucf101', type=str, help='ucf101(default), toyota, k400')
 parser.add_argument('--split', default=1, type=int)
 parser.add_argument('--seq_len', default=5, type=int)
 parser.add_argument('--num_seq', default=8, type=int)
@@ -55,6 +55,7 @@ def main():
 
     if args.dataset == 'ucf101': args.num_class = 101
     elif args.dataset == 'hmdb51': args.num_class = 51 
+    elif args.dataset == 'toyota': args.num_class = 31 
 
     ### classifier model ###
     if args.model == 'lc':
@@ -94,6 +95,9 @@ def main():
     if args.dataset == 'hmdb51':
         lr_lambda = lambda ep: MultiStepLR_Restart_Multiplier(ep, gamma=0.1, step=[150,250,300], repeat=1)
     elif args.dataset == 'ucf101':
+        if args.img_dim == 224: lr_lambda = lambda ep: MultiStepLR_Restart_Multiplier(ep, gamma=0.1, step=[300,400,500], repeat=1)
+        else: lr_lambda = lambda ep: MultiStepLR_Restart_Multiplier(ep, gamma=0.1, step=[60, 80, 100], repeat=1)
+    elif args.dataset == 'toyota':
         if args.img_dim == 224: lr_lambda = lambda ep: MultiStepLR_Restart_Multiplier(ep, gamma=0.1, step=[300,400,500], repeat=1)
         else: lr_lambda = lambda ep: MultiStepLR_Restart_Multiplier(ep, gamma=0.1, step=[60, 80, 100], repeat=1)
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
@@ -354,6 +358,13 @@ def get_data(transform, mode='train'):
                          which_split=args.split)
     elif args.dataset == 'hmdb51':
         dataset = HMDB51_3d(mode=mode, 
+                         transform=transform, 
+                         seq_len=args.seq_len,
+                         num_seq=args.num_seq,
+                         downsample=args.ds,
+                         which_split=args.split)
+    elif args.dataset == 'toyota':
+        dataset = TOYOTASH_3d(mode=mode, 
                          transform=transform, 
                          seq_len=args.seq_len,
                          num_seq=args.num_seq,
