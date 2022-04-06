@@ -1,6 +1,7 @@
 import os
 import csv
 import glob
+import shutil
 
 def write_list(data_list, path, ):
     with open(path, 'w') as f:
@@ -92,8 +93,8 @@ def main_Kinetics400(mode, k400_path, f_root, csv_root='../data/kinetics400'):
         raise IOError('wrong mode')
 
 
-### For Toyota Smarthome Untrimmed ###
-def get_split(root_path, split_path):
+### For Toyota Smarthome Trimmed ###
+def get_split_toyota(root_path, split_path):
     split = []
     with open(split_path, 'r') as f:
         for line in f:
@@ -105,10 +106,12 @@ def get_split(root_path, split_path):
 def main_toyota(splits_root, f_root, csv_root='../data/toyota_smarthome'):
     if not os.path.exists(csv_root): os.makedirs(csv_root)
 
+    shutil.copyfile(os.path.join(splits_root, 'classes.txt'), os.path.join(csv_root, 'classInd.txt'))
+
     train_split_file = os.path.join(splits_root, 'train.txt')
     test_split_file = os.path.join(splits_root, 'test.txt')
-    train_set = get_split(f_root, train_split_file)
-    test_set = get_split(f_root, test_split_file)
+    train_set = get_split_toyota(f_root, train_split_file)
+    test_set = get_split_toyota(f_root, test_split_file)
     
     write_list(train_set, os.path.join(csv_root, 'train.csv'))
     write_list(test_set, os.path.join(csv_root, 'test.csv'))

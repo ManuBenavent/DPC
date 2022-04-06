@@ -287,14 +287,14 @@ class TOYOTASH_3d(data.Dataset):
                  num_seq =1,
                  downsample=3,
                  epsilon=5,
-                 which_split=1):
+                 reduced_classes=False):
         self.mode = mode
         self.transform = transform
         self.seq_len = seq_len
         self.num_seq = num_seq
         self.downsample = downsample
         self.epsilon = epsilon
-        self.which_split = which_split
+        self.reduced_classes = reduced_classes
 
         # splits
         if mode == 'train':
@@ -311,9 +311,9 @@ class TOYOTASH_3d(data.Dataset):
 
         action_file = os.path.join('../process_data/data/toyota_smarthome', 'classInd.txt')
         action_df = pd.read_csv(action_file, sep=' ', header=None)
-        for _, row in action_df.iterrows():
-            act_id, act_name = row
-            act_id = int(act_id) - 1 # let id start from 0
+        for index, row in action_df.iterrows():
+            act_id = index
+            act_name = row[0]
             self.action_dict_decode[act_id] = act_name
             self.action_dict_encode[act_name] = act_id
 
@@ -385,12 +385,10 @@ class TOYOTASH_3d(data.Dataset):
         else:
             t_seq = t_seq.view(self.num_seq, self.seq_len, C, H, W).transpose(1,2)
 
-        try:
-            vname = vpath.split('/')[-3]
-            vid = self.encode_action(vname)
-        except:
-            vname = vpath.split('/')[-2]
-            vid = self.encode_action(vname)
+        vname = vpath.split('/')[-3]
+        if self.reduced_classes and '.' in vname:
+            vname = vname.split('.')[0]
+        vid = self.encode_action(vname)
 
         label = torch.LongTensor([vid])
 

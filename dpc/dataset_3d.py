@@ -264,8 +264,9 @@ class TOYOTASH_3d(data.Dataset):
         self.action_dict_decode = {}
         action_file = os.path.join('../process_data/data/toyota_smarthome', 'classInd.txt')
         action_df = pd.read_csv(action_file, sep=' ', header=None)
-        for _, row in action_df.iterrows():
-            act_id, act_name = row
+        for index, row in action_df.iterrows():
+            act_id = index
+            act_name = row[0]
             self.action_dict_decode[act_id] = act_name
             self.action_dict_encode[act_name] = act_id
 

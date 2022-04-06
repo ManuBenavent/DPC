@@ -46,6 +46,7 @@ parser.add_argument('--reset_lr', action='store_true', help='Reset learning rate
 parser.add_argument('--train_what', default='last', type=str, help='Train what parameters?')
 parser.add_argument('--prefix', default='tmp', type=str)
 parser.add_argument('--img_dim', default=128, type=int)
+parser.add_argument('--reduced_classes', default=False, type=bool, help='True if toyota smarthome has been trained with the reduced set of classes (default False)')
 
 
 def main():
@@ -369,7 +370,7 @@ def get_data(transform, mode='train'):
                          seq_len=args.seq_len,
                          num_seq=args.num_seq,
                          downsample=args.ds,
-                         which_split=args.split)
+                         reduced_classes=args.reduced_classes)
     else:
         raise ValueError('dataset not supported')
     my_sampler = data.RandomSampler(dataset)
@@ -378,7 +379,7 @@ def get_data(transform, mode='train'):
                                       batch_size=args.batch_size,
                                       sampler=my_sampler,
                                       shuffle=False,
-                                      num_workers=16,
+                                      num_workers=12,
                                       pin_memory=True,
                                       drop_last=True)
     elif mode == 'val':
@@ -386,7 +387,7 @@ def get_data(transform, mode='train'):
                                       batch_size=args.batch_size,
                                       sampler=my_sampler,
                                       shuffle=False,
-                                      num_workers=16,
+                                      num_workers=12,
                                       pin_memory=True,
                                       drop_last=True)
     elif mode == 'test':
@@ -394,7 +395,7 @@ def get_data(transform, mode='train'):
                                       batch_size=1,
                                       sampler=my_sampler,
                                       shuffle=False,
-                                      num_workers=16,
+                                      num_workers=12,
                                       pin_memory=True)
     print('"%s" dataset size: %d' % (mode, len(dataset)))
     return data_loader
