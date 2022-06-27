@@ -296,12 +296,14 @@ class TOYOTASH_3d(data.Dataset):
         self.epsilon = epsilon
         self.reduced_classes = reduced_classes
 
+        toyota_path = '../process_data/data/toyota_smarthome_reduced/' if self.reduced_classes else '../process_data/data/toyota_smarthome/'
+
         # splits
         if mode == 'train':
-            split = '../process_data/data/toyota_smarthome/train.csv'
+            split = os.path.join(toyota_path, 'train.csv')
             video_info = pd.read_csv(split, header=None)
         elif (mode == 'val') or (mode == 'test'):
-            split = '../process_data/data/toyota_smarthome/test.csv' # use test for val, temporary
+            split = os.path.join(toyota_path, 'test.csv') # use test for val, temporary
             video_info = pd.read_csv(split, header=None)
         else: raise ValueError('wrong mode')
 
@@ -309,7 +311,7 @@ class TOYOTASH_3d(data.Dataset):
         self.action_dict_encode = {}
         self.action_dict_decode = {}
 
-        action_file = os.path.join('../process_data/data/toyota_smarthome', 'classInd.txt')
+        action_file = os.path.join(toyota_path, 'classInd.txt')
         action_df = pd.read_csv(action_file, sep=' ', header=None)
         for index, row in action_df.iterrows():
             act_id = index
@@ -388,6 +390,131 @@ class TOYOTASH_3d(data.Dataset):
         vname = vpath.split('/')[-3]
         if self.reduced_classes and '.' in vname:
             vname = vname.split('.')[0]
+        vid = self.encode_action(vname)
+
+        label = torch.LongTensor([vid])
+
+        return t_seq, label
+
+    def __len__(self):
+        return len(self.video_info)
+
+    def encode_action(self, action_name):
+        '''give action name, return category'''
+        return self.action_dict_encode[action_name]
+
+    def decode_action(self, action_code):
+        '''give action code, return action name'''
+        return self.action_dict_decode[action_code]
+
+
+class EK55_3d(data.Dataset):
+    def __init__(self,
+                 mode='test',
+                 transform=None,
+                 seq_len=10,
+                 num_seq =1,
+                 downsample=3,
+                 epsilon=5):
+        self.mode = mode
+        self.transform = transform
+        self.seq_len = seq_len
+        self.num_seq = num_seq
+        self.downsample = downsample
+        self.epsilon = epsilon
+
+        ek55_path = '../epic-kitchens55/'
+
+        # splits
+        if mode == 'train':
+            raise ValueError('Not implemented')
+            video_info = pd.read_csv(split, header=None)
+        elif (mode == 'val') or (mode == 'test'):
+            split = os.path.join(ek55_path, 'test.csv') # use test for val, temporary
+            video_info = pd.read_csv(split, header=None)
+        else: raise ValueError('wrong mode')
+
+        # get action list
+        self.action_dict_encode = {}
+        self.action_dict_decode = {}
+
+        action_file = os.path.join(ek55_path, 'classInd.txt')
+        action_df = pd.read_csv(action_file, sep=' ', header=None)
+        for index, row in action_df.iterrows():
+            act_id = index
+            act_name = row[0]
+            self.action_dict_decode[act_id] = act_name
+            self.action_dict_encode[act_name] = act_id
+
+        # filter out too short videos:
+        drop_idx = []
+        for idx, row in video_info.iterrows():
+            vpath, vlen = row
+            if vlen-self.num_seq*self.seq_len*self.downsample <= 0:
+                drop_idx.append(idx)
+        self.video_info = video_info.drop(drop_idx, axis=0)
+
+        if mode == 'val': self.video_info = self.video_info.sample(frac=0.3)
+        # shuffle not required
+
+    def idx_sampler(self, vlen, vpath):
+        '''sample index from a video'''
+        if vlen-self.num_seq*self.seq_len*self.downsample <= 0: return [None]
+        n = 1
+        if self.mode == 'test':
+            seq_idx_block = np.arange(0, vlen, self.downsample) # all possible frames with downsampling
+            return [seq_idx_block, vpath]
+        start_idx = np.random.choice(range(vlen-self.num_seq*self.seq_len*self.downsample), n)
+        seq_idx = np.expand_dims(np.arange(self.num_seq), -1)*self.downsample*self.seq_len + start_idx
+        seq_idx_block = seq_idx + np.expand_dims(np.arange(self.seq_len),0)*self.downsample
+        return [seq_idx_block, vpath]
+
+
+    def __getitem__(self, index):
+        vpath, vlen = self.video_info.iloc[index]
+        items = self.idx_sampler(vlen, vpath)
+        if items is None: print(vpath)
+
+        idx_block, vpath = items
+        if self.mode != 'test':
+            assert idx_block.shape == (self.num_seq, self.seq_len)
+            idx_block = idx_block.reshape(self.num_seq*self.seq_len)
+
+        seq = [pil_loader(os.path.join(vpath, 'image_%05d.jpg' % (i+1))) for i in idx_block]
+        t_seq = self.transform(seq) # apply same transform
+
+        num_crop = None
+        try:
+            (C, H, W) = t_seq[0].size()
+            t_seq = torch.stack(t_seq, 0)
+        except:
+            (C, H, W) = t_seq[0][0].size()
+            tmp = [torch.stack(i, 0) for i in t_seq]
+            assert len(tmp) == 5
+            num_crop = 5
+            t_seq = torch.stack(tmp, 1)
+
+        if self.mode == 'test':
+            # return all available clips, but cut into length = num_seq
+            SL = t_seq.size(0)
+            clips = []; i = 0
+            while i+self.seq_len <= SL:
+                clips.append(t_seq[i:i+self.seq_len, :])
+                # i += self.seq_len//2
+                i += self.seq_len
+            if num_crop:
+                # half overlap:
+                clips = [torch.stack(clips[i:i+self.num_seq], 0).permute(2,0,3,1,4,5) for i in range(0,len(clips)+1-self.num_seq,self.num_seq//2)]
+                NC = len(clips)
+                t_seq = torch.stack(clips, 0).view(NC*num_crop, self.num_seq, C, self.seq_len, H, W)
+            else:
+                # half overlap:
+                clips = [torch.stack(clips[i:i+self.num_seq], 0).transpose(1,2) for i in range(0,len(clips)+1-self.num_seq,self.num_seq//2)]
+                t_seq = torch.stack(clips, 0)
+        else:
+            t_seq = t_seq.view(self.num_seq, self.seq_len, C, H, W).transpose(1,2)
+
+        vname = vpath.split('/')[-3]
         vid = self.encode_action(vname)
 
         label = torch.LongTensor([vid])

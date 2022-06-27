@@ -1,0 +1,11 @@
+rinse_board:cutting
+wipe_counter
+wash_pan
+dry_hand
+stir_food
+stir_vegetable
+stir_rice
+pour_water
+knead_dough
+chop_squash
+wipe_sink

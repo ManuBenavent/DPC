@@ -1,0 +1,1 @@
+{0: "rinse_board:cutting", 1: "wipe_counter", 2: "wash_pan", 3: "dry_hand", 4: "stir_food", 5: "stir_vegetable", 6: "stir_rice", 7: "pour_water", 8: "knead_dough", 9: "chop_squash", 10: "wipe_sink"}

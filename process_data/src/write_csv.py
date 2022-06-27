@@ -103,16 +103,24 @@ def get_split_toyota(root_path, split_path):
             split.append([vpath, len(glob.glob(os.path.join(vpath, '*.jpg')))])
     return split
 
-def main_toyota(splits_root, f_root, csv_root='../data/toyota_smarthome'):
+def main_toyota(splits_root, f_root, csv_root='../data/toyota_smarthome', reduced_classes=False):
+
+    if reduced_classes:
+        class_file = 'reduced_classes.txt'
+        train_file = 'reduced_train.txt'
+        test_file = 'reduced_test.txt'
+        csv_root += '_reduced'
+    else:
+        class_file = 'classes.txt'
+        train_file = 'train.txt'
+        test_file = 'test.txt'
     if not os.path.exists(csv_root): os.makedirs(csv_root)
-
-    shutil.copyfile(os.path.join(splits_root, 'classes.txt'), os.path.join(csv_root, 'classInd.txt'))
-
-    train_split_file = os.path.join(splits_root, 'train.txt')
-    test_split_file = os.path.join(splits_root, 'test.txt')
+    
+    shutil.copyfile(os.path.join(splits_root, class_file), os.path.join(csv_root, 'classInd.txt'))
+    train_split_file = os.path.join(splits_root, train_file)
+    test_split_file = os.path.join(splits_root, test_file)
     train_set = get_split_toyota(f_root, train_split_file)
     test_set = get_split_toyota(f_root, test_split_file)
-    
     write_list(train_set, os.path.join(csv_root, 'train.csv'))
     write_list(test_set, os.path.join(csv_root, 'test.csv'))
 
@@ -121,7 +129,8 @@ if __name__ == '__main__':
     # edit 'your_path' here: 
 
     main_toyota(f_root='/workspace/toyota_smarthome/rgb_frames',
-                splits_root='/workspace/toyota_smarthome/splits')
+                splits_root='/workspace/toyota_smarthome/splits',
+                reduced_classes=True)
 
     # main_UCF101(f_root='your_path/UCF101/frame', 
     #             splits_root='your_path/UCF101/splits_classification')
