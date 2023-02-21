@@ -1,6 +1,7 @@
 ## Video Representation Learning by Dense Predictive Coding 
 
-This  fork from TengdaHan/DPC contains the modifications performed by my [Master's Thesis](http://hdl.handle.net/10045/125585) at the University of Alicante.
+*This  fork from TengdaHan/DPC contains the modifications performed by my [Master's Thesis](http://hdl.handle.net/10045/125585) at the University of Alicante.*
+
 This repository contains the implementation of Dense Predictive Coding (DPC). 
 
 Links: [[Arxiv](https://arxiv.org/abs/1909.04656)] [[Video](https://youtu.be/43KIHUvHjB0)] [[Project page](http://www.robots.ox.ac.uk/~vgg/research/DPC/dpc.html)]
